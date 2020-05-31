@@ -1,18 +1,54 @@
 #include <Sensor.h>
 
-Sensor::Sensor(int pin, int type, bool useFahrenheit)
+Sensor::Sensor(Temperature* temperature, Humidity* humidity)
 {
-    dhtSensor = new DHT(pin, type);
+    this->dhtSensor = new DHT(pin, type);
 
-    dhtSensor->begin();
+    this->temperature = temperature;
+
+    this->humidity = humidity;
+
+    this->dhtSensor->begin();
+}
+
+void Sensor::checkReadings()
+{
+    if (!this->timeToUpdate()) {
+        return;
+    }
+    
+    float humidity = this->getHumidity();
+
+    float temperature = this->getTemperature();
+
+    Serial.print("Humidity is:");
+	Serial.println(humidity);
+
+	Serial.print("Temperature is:");
+	Serial.println(temperature);
 }
 
 float Sensor::getHumidity()
 {
-    return dhtSensor->readHumidity();
+    float humid = dhtSensor->readHumidity();
+
+    this->humidity->updateReading(humid);
+
+    return humid;
 }
 
 float Sensor::getTemperature()
 {
-    return dhtSensor->readTemperature(useFahrenheit);
+    float temp = dhtSensor->readTemperature(useFahrenheit);
+
+    this->temperature->updateReading(temp);
+
+    return temp;
+}
+
+bool Sensor::timeToUpdate()
+{
+    unsigned long currentMillis = millis();
+
+    return currentMillis - previousMillis >= interval;
 }
